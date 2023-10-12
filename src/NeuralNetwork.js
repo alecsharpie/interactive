@@ -58,6 +58,8 @@ export const trainModel = async (
       console.log(pred);
       const l = loss(pred, dataY);
 
+      console.log(l);
+
       // Perform backpropagation
       l.backward();
 
