@@ -1,25 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
 
-function App() {
+import React from "react";
+import DatasetSelector from "./DatasetSelector";
+import { trainModel } from "./NeuralNetwork";
+
+const App = () => {
+  const handleDatasetSelect = (
+    dataset,
+    learningRate,
+    numLayers,
+    numWeightsPerLayer
+  ) => {
+    trainModel(dataset, learningRate, numLayers, numWeightsPerLayer);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <h1>Select a Dataset</h1>
+      <DatasetSelector onDatasetSelect={handleDatasetSelect} />
     </div>
   );
-}
+};
 
 export default App;
