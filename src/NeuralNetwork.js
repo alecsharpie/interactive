@@ -1,7 +1,6 @@
 // src/NeuralNetwork.js
-import { matmul } from "webgpu-torch/src/ops_artisanal";
-import * as torch from "webgpu-torch";
 
+import * as torch from "webgpu-torch";
 
 export const trainModel = async (
   dataset,
@@ -13,10 +12,6 @@ export const trainModel = async (
     console.warn(`WebGPU is not supported.`);
     return;
   }
-
-  // Convert dataset to tensors
-  const x = torch.tensor({ data: dataset.map((d) => d.x), requiresGrad: true });
-  const y = torch.tensor({ data: dataset.map((d) => d.y), requiresGrad: true });
 
   // Initialize weights and biases for each layer
   const weights = Array.from({ length: numLayers }, () =>
@@ -36,7 +31,7 @@ export const trainModel = async (
   const forward = (x) => {
     let a = x;
     for (let i = 0; i < numLayers; i++) {
-      const z = matmul(a, weights[i]).add(biases[i]);
+      const z = a.mul(weights[i]).add(biases[i]);
       a = z.relu();
     }
     return a;
@@ -44,28 +39,38 @@ export const trainModel = async (
 
   // Define the loss function (mean squared error)
   const loss = (pred, y) => {
-    return pred.sub(y).pow(2).mean();
+    console.log(pred.sub(y)); // .pow(2) BUG HERE POW DOESNT WORK
+    return pred.sub(y).mean();
   };
 
   // Training loop
   for (let i = 0; i < 100; i++) {
     // for 100 epochs
-    // Perform forward pass and compute loss
-    const pred = forward(x);
-    const l = loss(pred, y);
+    console.log(`Epoch ${i + 1}`);
+    console.log(dataset);
+    for (let j = 0; j < dataset.length; j++) {
+      // Get data point
+      const dataX = torch.tensor({ data: dataset[j].x, requiresGrad: true });
+      const dataY = torch.tensor({ data: dataset[j].y, requiresGrad: true });
 
-    // Perform backpropagation
-    l.backward();
+      // Perform forward pass and compute loss
+      const pred = forward(dataX);
+      console.log(pred);
+      const l = loss(pred, dataY);
 
-    // Update weights and biases
-    weights.forEach((w) => w.sub_(w.grad.mul(learningRate)));
-    biases.forEach((b) => b.sub_(b.grad.mul(learningRate)));
+      // Perform backpropagation
+      l.backward();
 
-    // Zero the gradients
-    weights.forEach((w) => w.grad.zero_());
-    biases.forEach((b) => b.grad.zero_());
+      // Update weights and biases
+      weights.forEach((w) => w.sub_(w.grad.mul(learningRate)));
+      biases.forEach((b) => b.sub_(b.grad.mul(learningRate)));
 
-    // Print loss
-    console.log(`Epoch ${i + 1}: ${l.data}`);
+      // Zero the gradients
+      weights.forEach((w) => w.grad.zero_());
+      biases.forEach((b) => b.grad.zero_());
+
+      // Print loss
+      console.log(`Epoch ${i + 1}, Data Point ${j + 1}: ${l.data}`);
+    }
   }
 };
